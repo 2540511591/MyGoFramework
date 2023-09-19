@@ -20,7 +20,8 @@ func init() {
 
 func GetDefaultConfig() *SConfig {
 	return &SConfig{
-		WorkerNumber: 10,
-		DataSize:     512,
+		WorkerNumber:   10,
+		WorkerQueueLen: 100,
+		DataSize:       512,
 	}
 }

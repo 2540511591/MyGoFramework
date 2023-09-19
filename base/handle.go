@@ -2,6 +2,7 @@ package base
 
 import (
 	"fmt"
+	"reflect"
 	"zeh/MyGoFramework/base/iface"
 	"zeh/MyGoFramework/conf"
 	"zeh/MyGoFramework/utils"
@@ -29,6 +30,7 @@ func (h *Handle) AddHandle(u uint32, router iface.IRouter) {
 
 func (h *Handle) StartWorkerPool() {
 	//TODO implement me
+	fmt.Printf("--->协程池启动中，协程数量：%d，单个工作协程任务数量：%d\n", conf.ServerConfig.WorkerNumber, conf.ServerConfig.WorkerQueueLen)
 	var i uint32 = 0
 	for ; i < conf.ServerConfig.WorkerNumber; i++ {
 		h.workers[i] = make(chan iface.IRequest, conf.ServerConfig.WorkerQueueLen)
@@ -49,12 +51,12 @@ func (h *Handle) startOneWorker(workerId uint32, queue chan iface.IRequest) {
 				continue
 			}
 
-			//绑定路由
-			req.BindRouter(router)
+			//通过反射实例化新的路由并绑定
+			req.BindRouter(newRouter(router))
 
 			//处理
 			utils.Try(func() {
-				h.pipeline(req).Output()
+				_ = h.pipeline(req).Output()
 			}, func(err interface{}) {
 				fmt.Printf("--->请求处理异常,err:%s\n", err.(error))
 				return
@@ -76,6 +78,11 @@ func packPipeline(
 func final(r iface.IRequest) iface.IResponse {
 	r.Call()
 	return r.GetResponse()
+}
+
+func newRouter[T interface{}](s T) T {
+	t := reflect.TypeOf(s).Elem()
+	return reflect.New(t).Interface().(T)
 }
 
 func NewHandle(server iface.IServer) iface.IHandle {
