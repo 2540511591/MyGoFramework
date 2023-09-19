@@ -1,7 +1,12 @@
 package main
 
-import "fmt"
+import (
+	"zeh/MyGoFramework/api"
+	"zeh/MyGoFramework/base"
+)
 
 func main() {
-	fmt.Println("Hello World!")
+	server := base.NewDefaultServer()
+	server.AddRouter(0, &api.Index{})
+	server.Start()
 }
