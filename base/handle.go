@@ -2,19 +2,22 @@ package base
 
 import (
 	"fmt"
-	"reflect"
 	"zeh/MyGoFramework/base/iface"
 	"zeh/MyGoFramework/conf"
 	"zeh/MyGoFramework/utils"
 )
 
 type Handle struct {
-	api      map[uint32]iface.IRouter
-	workers  []chan iface.IRequest
-	server   iface.IServer
+	//路由集合
+	api map[uint32]iface.IRouter
+	//工作协程池
+	workers []chan iface.IRequest
+	server  iface.IServer
+	//管道
 	pipeline func(iface.IRequest) iface.IResponse
 }
 
+// 将请求分配给一个工作协程进行处理
 func (h *Handle) Execute(request iface.IRequest) {
 	//TODO implement me
 	len := uint64(len(h.workers))
@@ -28,6 +31,7 @@ func (h *Handle) AddHandle(u uint32, router iface.IRouter) {
 	h.api[u] = router
 }
 
+// 开启协程池
 func (h *Handle) StartWorkerPool() {
 	//TODO implement me
 	fmt.Printf("--->协程池启动中，协程数量：%d，单个工作协程任务数量：%d\n", conf.ServerConfig.WorkerNumber, conf.ServerConfig.WorkerQueueLen)
@@ -39,6 +43,7 @@ func (h *Handle) StartWorkerPool() {
 	}
 }
 
+// 阻塞，单个协程的业务处理逻辑
 func (h *Handle) startOneWorker(workerId uint32, queue chan iface.IRequest) {
 	for {
 		select {
@@ -52,7 +57,7 @@ func (h *Handle) startOneWorker(workerId uint32, queue chan iface.IRequest) {
 			}
 
 			//通过反射实例化新的路由并绑定
-			req.BindRouter(newRouter(router))
+			req.BindRouter(utils.NewObject(router))
 
 			//处理
 			utils.Try(func() {
@@ -65,24 +70,10 @@ func (h *Handle) startOneWorker(workerId uint32, queue chan iface.IRequest) {
 	}
 }
 
-// 管道组装
-func packPipeline(
-	current func(iface.IRequest, func(iface.IRequest) iface.IResponse) iface.IResponse,
-	prev func(request iface.IRequest) iface.IResponse,
-) func(iface.IRequest) iface.IResponse {
-	return func(request iface.IRequest) iface.IResponse {
-		return current(request, prev)
-	}
-}
-
+// 最后一个管道逻辑
 func final(r iface.IRequest) iface.IResponse {
 	r.Call()
 	return r.GetResponse()
-}
-
-func newRouter[T interface{}](s T) T {
-	t := reflect.TypeOf(s).Elem()
-	return reflect.New(t).Interface().(T)
 }
 
 func NewHandle(server iface.IServer) iface.IHandle {
@@ -92,12 +83,14 @@ func NewHandle(server iface.IServer) iface.IHandle {
 		server:  server,
 	}
 
-	//组装管道
-	var pipelines = final
-	for _, pipeline := range conf.CommonPipeline {
-		pipelines = packPipeline(pipeline, pipelines)
-	}
-	h.pipeline = pipelines
+	//初始化管道
+	pipe := &utils.PipeLine[iface.IRequest, iface.IResponse]{}
+	//设置管道列表
+	pipe.SetPipes(conf.CommonPipeline)
+	//设置最后的管道
+	pipe.SetFinal(final)
+	//创建
+	h.pipeline, _ = pipe.Create()
 
 	return h
 }

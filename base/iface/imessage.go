@@ -1,8 +1,11 @@
 package iface
 
 type IMessage interface {
+	//获取消息id
 	GetId() uint32
+	//获取消息长度
 	GetLen() uint32
+	//获取数据
 	GetData() []byte
 
 	SetId(uint32)
@@ -23,7 +26,10 @@ func (m *BaseMessage) GetId() uint32 {
 
 func (m *BaseMessage) GetLen() uint32 {
 	//TODO implement me
-	return m.Len
+	if m.Len != 0 {
+		return m.Len
+	}
+	return uint32(len(m.Data))
 }
 
 func (m *BaseMessage) GetData() []byte {

@@ -65,7 +65,18 @@ func DefaultUnPack(conn iface.IConnection) (iface.IMessage, error) {
 	buffer := data[4:]
 	message := new(DefaultMessage)
 	message.SetId(binary.BigEndian.Uint32(id))
-	message.SetLen(dataSize)
 	message.SetData(buffer)
 	return message, nil
+}
+
+func TestPack(id uint32, data []byte) []byte {
+	newData := make([]byte, conf.ServerConfig.DataSize)
+	binary.BigEndian.PutUint32(newData[:4], id)
+	copy(newData[4:], data)
+
+	return newData
+}
+
+func TestUnPack(data []byte) (uint32, []byte) {
+	return binary.BigEndian.Uint32(data[:4]), data[4:]
 }

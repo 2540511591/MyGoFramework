@@ -5,29 +5,61 @@ import (
 	"fmt"
 	"github.com/gorilla/websocket"
 	"net"
+	"sync"
 	"zeh/MyGoFramework/base/iface"
+	"zeh/MyGoFramework/utils"
 )
 
 type TcpConnection struct {
-	id        uint64
-	proType   uint8
-	conn      *net.TCPConn
-	server    iface.IServer
+	//连接id，有服务器分配
+	id uint64
+	//连接协议
+	proType uint8
+	//socket
+	conn *net.TCPConn
+	//绑定的服务器
+	server iface.IServer
+	//写通道
 	writeChan chan iface.IMessage
 
 	ctx    context.Context
 	cancel context.CancelFunc
+	//读写锁
+	lock *sync.RWMutex
+	//是否已关闭
+	isClose bool
+
+	//自定义属性
+	property map[string]interface{}
 }
 
 func (c *TcpConnection) Start() {
 	//TODO implement me
+	//读写分离
 	go c.startReader()
 	go c.startWriter()
 }
 
 func (c *TcpConnection) Stop() {
 	//TODO implement me
-	c.cancel()
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	utils.Try(func() {
+		c.cancel()
+
+		if !c.isClose {
+			if c.writeChan != nil {
+				close(c.writeChan)
+			}
+
+			c.conn.Close()
+
+			c.isClose = true
+		}
+	}, func(i interface{}) {
+		fmt.Println(i.(error))
+	})
 }
 
 func (c *TcpConnection) GetId() uint64 {
@@ -70,6 +102,14 @@ func (c *TcpConnection) GetCancel() context.CancelFunc {
 	return c.cancel
 }
 
+func (c *TcpConnection) SendBuffer(bytes []byte) {
+	//TODO implement me
+	msg := &DefaultMessage{}
+	msg.SetId(0)
+	msg.SetData(bytes)
+	c.writeChan <- msg
+}
+
 func (c *TcpConnection) startReader() {
 	defer c.Stop()
 	defer func() {
@@ -78,20 +118,23 @@ func (c *TcpConnection) startReader() {
 		}
 	}()
 
+	unPack := c.server.GetUnPack()
 	for {
 		select {
 		case <-c.ctx.Done():
 			return
 		default:
-			message, err := c.server.GetUnPack()(c)
+			//获取数据，处理数据传输边界、粘包等问题
+			message, err := unPack(c)
 			if err != nil {
 				fmt.Printf("--->解包错误,err:%s\n", err)
-				c.Stop()
 				return
 			}
 
+			//实例化请求对象
 			req := NewRequest(message, c)
 
+			//分配工作协程处理
 			c.server.GetMsgHandle().Execute(req)
 		}
 	}
@@ -105,12 +148,14 @@ func (c *TcpConnection) startWriter() {
 		}
 	}()
 
+	pack := c.server.GetPack()
 	for {
 		select {
 		case <-c.ctx.Done():
 			return
 		case message := <-c.writeChan:
-			data, err := c.server.GetPack()(message, c)
+			//封包
+			data, err := pack(message, c)
 			if err != nil {
 				fmt.Printf("--->封包错误,err:%s\n", err)
 				return
@@ -119,11 +164,8 @@ func (c *TcpConnection) startWriter() {
 			_, err = c.conn.Write(data)
 			if err != nil {
 				fmt.Printf("--->数据发送错误,err:%s\n", err)
-				c.Stop()
 				return
 			}
-		default:
-
 		}
 	}
 }
@@ -137,7 +179,10 @@ func NewTcpConnection(server iface.IServer, conn *net.TCPConn, cid uint64) *TcpC
 		writeChan: make(chan iface.IMessage, 10),
 		ctx:       nil,
 		cancel:    nil,
+		property:  make(map[string]interface{}),
+		lock:      &sync.RWMutex{},
 	}
+	//生成context，读写模型依赖该context关闭协程
 	c.ctx, c.cancel = context.WithCancel(server.GetCtx())
 
 	return c

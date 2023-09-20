@@ -11,18 +11,22 @@ import (
 )
 
 type Server struct {
-	Name       string
-	IPVersion  string
-	IP         string
-	Port       uint32
-	PackFunc   func(iface.IMessage, iface.IConnection) ([]byte, error)
+	Name      string
+	IPVersion string
+	IP        string
+	Port      uint32
+	//封包函数
+	PackFunc func(iface.IMessage, iface.IConnection) ([]byte, error)
+	//解包函数，处理数据传输边界和粘包问题
 	UnPackFunc func(iface.IConnection) (iface.IMessage, error)
 
+	//工作对象、协程池
 	msgHandle iface.IHandle
 
 	ctx    context.Context
 	cancel context.CancelFunc
 
+	//客户端连接id，自增
 	cid uint64
 }
 
@@ -30,16 +34,19 @@ func (s *Server) Start() {
 	//TODO implement me
 	fmt.Printf("--->启动服务器中，服务器名：%s，协议版本：%s，监听IP：%s，监听端口：%d\n", s.Name, s.IPVersion, s.IP, s.Port)
 
-	time.Sleep(time.Second)
+	//time.Sleep(time.Second)
 
+	//开始监听
 	s.listenTcp()
 
-	time.Sleep(time.Second)
+	//time.Sleep(time.Second)
 
+	//开启协程池
 	s.msgHandle.StartWorkerPool()
 
-	time.Sleep(time.Second * 2)
+	//time.Sleep(time.Second * 2)
 
+	//阻塞
 	s.handle()
 }
 
@@ -126,6 +133,7 @@ func (s *Server) listenTcp() {
 					continue
 				}
 
+				//给连接分配一个唯一id
 				cid := atomic.AddUint64(&s.cid, 1)
 				client := NewTcpConnection(s, conn, cid)
 

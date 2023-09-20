@@ -15,25 +15,25 @@ var (
 )
 
 func Test1(request iface.IRequest, next func(iface.IRequest) iface.IResponse) iface.IResponse {
-	fmt.Println(1)
+	if request.GetMessageId() == 1 {
+		fmt.Println("请求路由id为1，拦截")
+		request.GetResponse().SendBuffer([]byte("非法请求，请重试！"))
+		return request.GetResponse()
+	}
+
 	res := next(request)
-	fmt.Println(1)
 
 	return res
 }
 
 func Test2(request iface.IRequest, next func(iface.IRequest) iface.IResponse) iface.IResponse {
-	fmt.Println(2)
 	res := next(request)
-	fmt.Println(2)
 
 	return res
 }
 
 func Test3(request iface.IRequest, next func(iface.IRequest) iface.IResponse) iface.IResponse {
-	fmt.Println(3)
 	res := next(request)
-	fmt.Println(3)
 
 	return res
 }
