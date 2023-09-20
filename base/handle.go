@@ -34,7 +34,7 @@ func (h *Handle) AddHandle(u uint32, router iface.IRouter) {
 // 开启协程池
 func (h *Handle) StartWorkerPool() {
 	//TODO implement me
-	fmt.Printf("--->协程池启动中，协程数量：%d，单个工作协程任务数量：%d\n", conf.ServerConfig.WorkerNumber, conf.ServerConfig.WorkerQueueLen)
+	fmt.Printf("####协程池启动中，协程数量：%d，单个工作协程任务数量：%d\n", conf.ServerConfig.WorkerNumber, conf.ServerConfig.WorkerQueueLen)
 	var i uint32 = 0
 	for ; i < conf.ServerConfig.WorkerNumber; i++ {
 		h.workers[i] = make(chan iface.IRequest, conf.ServerConfig.WorkerQueueLen)
@@ -52,7 +52,7 @@ func (h *Handle) startOneWorker(workerId uint32, queue chan iface.IRequest) {
 		case req := <-queue:
 			router := h.api[req.GetMessageId()]
 			if router == nil {
-				fmt.Printf("--->路由为空,routerId:%d\n", req.GetMessageId())
+				fmt.Printf("!!!!路由为空,routerId:%d\n", req.GetMessageId())
 				continue
 			}
 
@@ -63,7 +63,7 @@ func (h *Handle) startOneWorker(workerId uint32, queue chan iface.IRequest) {
 			utils.Try(func() {
 				_ = h.pipeline(req).Output()
 			}, func(err interface{}) {
-				fmt.Printf("--->请求处理异常,err:%s\n", err.(error))
+				fmt.Printf("!!!!请求处理异常,err:%s\n", err.(error))
 				return
 			})
 		}

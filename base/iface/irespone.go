@@ -8,10 +8,15 @@ type IResponse interface {
 	//根据id获取消息
 	GetMessage(uint32) IMessage
 
-	//设置消息，不会立即输出，需要经过管道
+	//立即发送消息
 	Send(uint32, []byte)
 	SendBuffer([]byte)
 	SendMsg(IMessage)
+
+	//设置待发送消息,出管道后才发送
+	WaitSend(uint32, []byte) uint32
+	WaitBuffer([]byte) uint32
+	WaitSendMsg(IMessage) uint32
 
 	//立刻向客户端发送所有数据
 	Output() error

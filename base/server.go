@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"runtime"
 	"sync/atomic"
 	"time"
 	"zeh/MyGoFramework/base/iface"
@@ -32,7 +33,7 @@ type Server struct {
 
 func (s *Server) Start() {
 	//TODO implement me
-	fmt.Printf("--->启动服务器中，服务器名：%s，协议版本：%s，监听IP：%s，监听端口：%d\n", s.Name, s.IPVersion, s.IP, s.Port)
+	fmt.Printf("####启动服务器中，服务器名：%s，协议版本：%s，监听IP：%s，监听端口：%d\n", s.Name, s.IPVersion, s.IP, s.Port)
 
 	//time.Sleep(time.Second)
 
@@ -83,10 +84,10 @@ func (s *Server) AddRouter(u uint32, router iface.IRouter) {
 func (s *Server) handle() {
 	select {
 	case <-s.ctx.Done():
-		fmt.Println("--->服务器启动失败!")
+		fmt.Println("!!!!服务器启动失败!")
 		return
 	default:
-		fmt.Println("--->服务器启动成功!")
+		fmt.Println("####服务器启动成功!")
 	}
 
 	for {
@@ -94,23 +95,26 @@ func (s *Server) handle() {
 		case <-s.ctx.Done():
 			return
 		default:
+			//固定协程数：主协程1个 + 监听tcp连接1个 + 工作协程数默认10个 = 12
+			//其他协程数：一个tcp连接会产生2个读写协程,消息队列，定时任务等
+			fmt.Printf("####当前程序在线协程数量：%d\n", runtime.NumGoroutine())
 			time.Sleep(time.Second * 10)
 		}
 	}
 }
 
 func (s *Server) listenTcp() {
-	fmt.Printf("--->tcp协议监听开始\n")
+	fmt.Printf("####tcp协议监听开始\n")
 	addr, err := net.ResolveTCPAddr(s.IPVersion, fmt.Sprintf("%s:%d", s.IP, s.Port))
 	if err != nil {
-		fmt.Printf("--->初始化监听地址失败,err:%s\n", err)
+		fmt.Printf("!!!!初始化监听地址失败,err:%s\n", err)
 		s.Stop()
 		return
 	}
 
 	listen, err := net.ListenTCP(s.IPVersion, addr)
 	if err != nil {
-		fmt.Printf("--->初始化监听失败,err:%s\n", err)
+		fmt.Printf("!!!!初始化监听失败,err:%s\n", err)
 		s.Stop()
 		return
 	}
@@ -124,16 +128,16 @@ func (s *Server) listenTcp() {
 				conn, err := listen.AcceptTCP()
 				if err != nil {
 					if errors.Is(err, net.ErrClosed) {
-						fmt.Printf("--->监听连接已关闭,err:%s\n", err)
+						fmt.Printf("!!!!监听连接已关闭,err:%s\n", err)
 						s.Stop()
 						return
 					}
 
-					fmt.Printf("--->监听连接错误,err:%s\n", err)
+					fmt.Printf("!!!!监听连接错误,err:%s\n", err)
 					continue
 				}
 
-				//给连接分配一个唯一id
+				//给连接分配一个唯一id,常驻可能数值过大造成数值溢出
 				cid := atomic.AddUint64(&s.cid, 1)
 				client := NewTcpConnection(s, conn, cid)
 

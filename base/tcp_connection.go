@@ -35,6 +35,7 @@ type TcpConnection struct {
 
 func (c *TcpConnection) Start() {
 	//TODO implement me
+	fmt.Printf("++++客户端连接+1，客户端ID：%d\n", c.id)
 	//读写分离
 	go c.startReader()
 	go c.startWriter()
@@ -56,6 +57,8 @@ func (c *TcpConnection) Stop() {
 			c.conn.Close()
 
 			c.isClose = true
+
+			fmt.Printf("----客户端连接关闭，客户端ID：%d\n", c.id)
 		}
 	}, func(i interface{}) {
 		fmt.Println(i.(error))
@@ -114,7 +117,7 @@ func (c *TcpConnection) startReader() {
 	defer c.Stop()
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Printf("--->读操作错误,err:%s\n", err)
+			fmt.Printf("!!!!读操作错误,err:%s\n", err)
 		}
 	}()
 
@@ -127,7 +130,7 @@ func (c *TcpConnection) startReader() {
 			//获取数据，处理数据传输边界、粘包等问题
 			message, err := unPack(c)
 			if err != nil {
-				fmt.Printf("--->解包错误,err:%s\n", err)
+				fmt.Printf("!!!!解包错误,err:%s\n", err)
 				return
 			}
 
@@ -144,7 +147,7 @@ func (c *TcpConnection) startWriter() {
 	defer c.Stop()
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Printf("--->写操作错误,err:%s\n", err)
+			fmt.Printf("!!!!写操作错误,err:%s\n", err)
 		}
 	}()
 
@@ -157,13 +160,13 @@ func (c *TcpConnection) startWriter() {
 			//封包
 			data, err := pack(message, c)
 			if err != nil {
-				fmt.Printf("--->封包错误,err:%s\n", err)
+				fmt.Printf("!!!!封包错误,err:%s\n", err)
 				return
 			}
 
 			_, err = c.conn.Write(data)
 			if err != nil {
-				fmt.Printf("--->数据发送错误,err:%s\n", err)
+				fmt.Printf("!!!!数据发送错误,err:%s\n", err)
 				return
 			}
 		}

@@ -33,7 +33,7 @@ func (r *Response) GetMessageNumber() uint32 {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 
-	return r.mNum + 1
+	return uint32(len(r.messages))
 }
 
 func (r *Response) GetMessage(u uint32) iface.IMessage {
@@ -62,9 +62,36 @@ func (r *Response) SendMsg(message iface.IMessage) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
+	r.conn.GetWriteChan() <- message
+	r.messages[r.mNum] = message
+	r.mStatus[r.mNum] = true
+	r.mNum++
+}
+
+func (r *Response) WaitSend(id uint32, data []byte) uint32 {
+	//TODO implement me
+	msg := &DefaultMessage{}
+	msg.SetId(id)
+	msg.SetData(data)
+	return r.WaitSendMsg(msg)
+}
+
+func (r *Response) WaitBuffer(data []byte) uint32 {
+	//TODO implement me
+	return r.WaitSend(0, data)
+}
+
+func (r *Response) WaitSendMsg(message iface.IMessage) uint32 {
+	//TODO implement me
+	r.lock.Lock()
+	defer r.lock.Unlock()
+
 	r.messages[r.mNum] = message
 	r.mStatus[r.mNum] = false
+	id := r.mNum
 	r.mNum++
+
+	return id
 }
 
 // 将消息全部发送
