@@ -22,7 +22,8 @@ type Server struct {
 	UnPackFunc func(iface.IConnection) (iface.IMessage, error)
 
 	//工作对象、协程池
-	msgHandle iface.IHandle
+	msgHandle    iface.IHandle
+	routerManage iface.IRouterManager
 
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -76,9 +77,14 @@ func (s *Server) GetUnPack() func(iface.IConnection) (iface.IMessage, error) {
 	return s.UnPackFunc
 }
 
-func (s *Server) AddRouter(u uint32, router iface.IRouter) {
+func (s *Server) GetRouterManage() iface.IRouterManager {
 	//TODO implement me
-	s.msgHandle.AddHandle(u, router)
+	return s.routerManage
+}
+
+func (s *Server) GetRouter() iface.IRouterGroup {
+	//TODO implement me
+	return s.GetRouterManage()
 }
 
 func (s *Server) handle() {
@@ -149,16 +155,17 @@ func (s *Server) listenTcp() {
 
 func NewDefaultServer() iface.IServer {
 	server := &Server{
-		Name:       "TCPServer",
-		IPVersion:  "tcp4",
-		IP:         "127.0.0.1",
-		Port:       9200,
-		PackFunc:   DefaultPack,
-		UnPackFunc: DefaultUnPack,
-		msgHandle:  nil,
-		ctx:        nil,
-		cancel:     nil,
-		cid:        0,
+		Name:         "TCPServer",
+		IPVersion:    "tcp4",
+		IP:           "127.0.0.1",
+		Port:         9200,
+		PackFunc:     DefaultPack,
+		UnPackFunc:   DefaultUnPack,
+		msgHandle:    nil,
+		routerManage: NewRouterManage(),
+		ctx:          nil,
+		cancel:       nil,
+		cid:          0,
 	}
 	server.ctx, server.cancel = context.WithCancel(context.Background())
 	server.msgHandle = NewHandle(server)

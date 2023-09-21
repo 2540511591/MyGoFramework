@@ -16,7 +16,8 @@ type IServer interface {
 	GetCtx() context.Context
 	//获取消息处理对象
 	GetMsgHandle() IHandle
+	GetRouterManage() IRouterManager
 
 	//添加路由
-	AddRouter(uint32, IRouter)
+	GetRouter() IRouterGroup
 }

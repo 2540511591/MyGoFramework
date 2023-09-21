@@ -11,10 +11,9 @@ type Handle struct {
 	//路由集合
 	api map[uint32]iface.IRouter
 	//工作协程池
-	workers []chan iface.IRequest
-	server  iface.IServer
-	//管道
-	pipeline func(iface.IRequest) iface.IResponse
+	workers      []chan iface.IRequest
+	server       iface.IServer
+	routerManage iface.IRouterManager
 }
 
 // 将请求分配给一个工作协程进行处理
@@ -50,18 +49,17 @@ func (h *Handle) startOneWorker(workerId uint32, queue chan iface.IRequest) {
 		case <-h.server.GetCtx().Done():
 			return
 		case req := <-queue:
-			router := h.api[req.GetMessageId()]
-			if router == nil {
+			routerH, err := h.routerManage.GetRouter(req.GetMessageId())
+			if err != nil {
 				fmt.Printf("!!!!路由为空,routerId:%d\n", req.GetMessageId())
 				continue
 			}
 
-			//通过反射实例化新的路由并绑定
-			req.BindRouter(utils.NewObject(router))
+			routerH.SetRequest(req)
 
 			//处理
 			utils.Try(func() {
-				_ = h.pipeline(req).Output()
+				_ = routerH.Handle().Output()
 			}, func(err interface{}) {
 				fmt.Printf("!!!!请求处理异常,err:%s\n", err.(error))
 				return
@@ -78,19 +76,11 @@ func final(r iface.IRequest) iface.IResponse {
 
 func NewHandle(server iface.IServer) iface.IHandle {
 	h := &Handle{
-		api:     make(map[uint32]iface.IRouter),
-		workers: make([]chan iface.IRequest, conf.ServerConfig.WorkerNumber),
-		server:  server,
+		api:          make(map[uint32]iface.IRouter),
+		workers:      make([]chan iface.IRequest, conf.ServerConfig.WorkerNumber),
+		server:       server,
+		routerManage: server.GetRouterManage(),
 	}
-
-	//初始化管道
-	pipe := &utils.PipeLine[iface.IRequest, iface.IResponse]{}
-	//设置管道列表
-	pipe.SetPipes(conf.CommonPipeline)
-	//设置最后的管道
-	pipe.SetFinal(final)
-	//创建
-	h.pipeline, _ = pipe.Create()
 
 	return h
 }
