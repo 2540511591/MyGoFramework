@@ -16,7 +16,9 @@ var (
 		"api": {
 			TestApi,
 		},
-		"authLogin": {},
+		"api.user": {
+			TestUser,
+		},
 	}
 )
 
@@ -31,7 +33,17 @@ func TestPipeline(request iface.IRequest, next func(iface.IRequest) iface.IRespo
 }
 
 func TestApi(request iface.IRequest, next func(iface.IRequest) iface.IResponse) iface.IResponse {
+	fmt.Println("--->TestApi请求")
 	res := next(request)
+	fmt.Println("--->TestApi响应")
+
+	return res
+}
+
+func TestUser(request iface.IRequest, next func(iface.IRequest) iface.IResponse) iface.IResponse {
+	fmt.Println("--->TestUser请求")
+	res := next(request)
+	fmt.Println("--->TestUser响应")
 
 	return res
 }
