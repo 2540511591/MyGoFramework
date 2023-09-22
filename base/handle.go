@@ -61,12 +61,6 @@ func (h *Handle) startOneWorker(workerId uint32, queue chan iface.IRequest) {
 	}
 }
 
-// 最后一个管道逻辑
-func final(r iface.IRequest) iface.IResponse {
-	r.Call()
-	return r.GetResponse()
-}
-
 func NewHandle(server iface.IServer) iface.IHandle {
 	h := &Handle{
 		workers:      make([]chan iface.IRequest, conf.ServerConfig.WorkerNumber),
