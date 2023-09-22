@@ -8,8 +8,6 @@ import (
 )
 
 type Handle struct {
-	//路由集合
-	api map[uint32]iface.IRouter
 	//工作协程池
 	workers      []chan iface.IRequest
 	server       iface.IServer
@@ -23,11 +21,6 @@ func (h *Handle) Execute(request iface.IRequest) {
 	id := uint32(request.GetConnection().GetId() % len)
 
 	h.workers[id] <- request
-}
-
-func (h *Handle) AddHandle(u uint32, router iface.IRouter) {
-	//TODO implement me
-	h.api[u] = router
 }
 
 // 开启协程池
@@ -76,7 +69,6 @@ func final(r iface.IRequest) iface.IResponse {
 
 func NewHandle(server iface.IServer) iface.IHandle {
 	h := &Handle{
-		api:          make(map[uint32]iface.IRouter),
 		workers:      make([]chan iface.IRequest, conf.ServerConfig.WorkerNumber),
 		server:       server,
 		routerManage: server.GetRouterManage(),

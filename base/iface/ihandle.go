@@ -5,6 +5,4 @@ type IHandle interface {
 	Execute(IRequest)
 	//开启工作协程池
 	StartWorkerPool()
-	//添加路由
-	AddHandle(uint32, IRouter)
 }
