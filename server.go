@@ -1,17 +1,12 @@
 package main
 
 import (
-	"zeh/MyGoFramework/api"
 	"zeh/MyGoFramework/base"
+	"zeh/MyGoFramework/router"
 )
 
 func main() {
 	server := base.NewDefaultServer()
-	r := server.GetRouter()
-	g := r.Group("api")
-	{
-		g2 := g.Group("user")
-		g2.AddRouter(0, &api.Test{})
-	}
+	router.InitRouter(server.GetRouter())
 	server.Start()
 }

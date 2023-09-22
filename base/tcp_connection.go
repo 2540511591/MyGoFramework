@@ -75,6 +75,21 @@ func (c *TcpConnection) GetProtocol() uint8 {
 	return c.proType
 }
 
+func (c *TcpConnection) SetProperty(s string, i interface{}) {
+	//TODO implement me
+	c.property[s] = i
+}
+
+func (c *TcpConnection) GetProperty(s string) interface{} {
+	//TODO implement me
+	return c.property[s]
+}
+
+func (c *TcpConnection) GetAllProperty() map[string]interface{} {
+	//TODO implement me
+	return c.property
+}
+
 func (c *TcpConnection) GetConnection() net.Conn {
 	//TODO implement me
 	return c.conn

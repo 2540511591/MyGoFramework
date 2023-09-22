@@ -19,6 +19,10 @@ type IConnection interface {
 	GetId() uint64
 	//获取该连接的通信协议
 	GetProtocol() uint8
+	//获取自定义信息
+	SetProperty(string, interface{})
+	GetProperty(string) interface{}
+	GetAllProperty() map[string]interface{}
 	//获取传输层连接
 	GetConnection() net.Conn
 	//获取ws协议连接

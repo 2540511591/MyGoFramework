@@ -68,8 +68,8 @@ func (m *RouterManage) AddRouterPl(u uint32, router iface.IRouter, f func(iface.
 func (m *RouterManage) Group(s string) iface.IRouterGroup {
 	//TODO implement me
 	var pipes []func(iface.IRequest, func(iface.IRequest) iface.IResponse) iface.IResponse
-	pipes = append(pipes, conf.CommonPipeline...)
-	if v, ok := conf.GroupPipeline[s]; ok {
+	pipes = append(pipes, conf.CommonPipelines...)
+	if v, ok := conf.GroupPipelines[s]; ok {
 		pipes = append(pipes, v...)
 	}
 
@@ -79,8 +79,8 @@ func (m *RouterManage) Group(s string) iface.IRouterGroup {
 func (m *RouterManage) GroupPl(s string, f func(iface.IRequest, func(iface.IRequest) iface.IResponse) iface.IResponse) iface.IRouterGroup {
 	//TODO implement me
 	var pipes []func(iface.IRequest, func(iface.IRequest) iface.IResponse) iface.IResponse
-	pipes = append(pipes, conf.CommonPipeline...)
-	if v, ok := conf.GroupPipeline[s]; ok {
+	pipes = append(pipes, conf.CommonPipelines...)
+	if v, ok := conf.GroupPipelines[s]; ok {
 		pipes = append(pipes, v...)
 	}
 	pipes = append(pipes, f)
@@ -125,7 +125,7 @@ func NewRouterManage() iface.IRouterManager {
 	}
 
 	pipe := &utils.PipeLine[iface.IRequest, iface.IResponse]{}
-	pipe.SetPipes(conf.CommonPipeline)
+	pipe.SetPipes(conf.CommonPipelines)
 	pipe.SetFinal(m.GetPipeFinal())
 	pipes, _ := pipe.Create()
 	m.commonPipelines = pipes

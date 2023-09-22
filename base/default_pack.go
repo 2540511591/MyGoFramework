@@ -40,12 +40,13 @@ func DefaultUnPack(conn iface.IConnection) (iface.IMessage, error) {
 		//读取固定长度
 		dataSize = conf.ServerConfig.DataSize
 		c := conn.GetConnection()
-		data = make([]byte, dataSize)
-		_, err := c.Read(data)
+		rData := make([]byte, dataSize)
+		_, err := c.Read(rData)
 		if err != nil {
 			conn.Stop()
 			return &DefaultMessage{}, errors.New("连接已关闭")
 		}
+		data = filter(rData)
 	case iface.PROTOCOL_WS:
 		//ws不固定长度
 		c := conn.GetWsConnection()
@@ -67,6 +68,23 @@ func DefaultUnPack(conn iface.IConnection) (iface.IMessage, error) {
 	message.SetId(binary.BigEndian.Uint32(id))
 	message.SetData(buffer)
 	return message, nil
+}
+
+func filter(data []byte) []byte {
+	l := len(data)
+	for ; l > 0; l-- {
+		if data[l-1] == 0 {
+			continue
+		} else {
+			break
+		}
+	}
+
+	if l <= 0 {
+		return []byte{}
+	}
+
+	return data[:l]
 }
 
 func TestPack(id uint32, data []byte) []byte {

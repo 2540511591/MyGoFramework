@@ -7,43 +7,47 @@ import (
 
 var (
 	//公共管道
-	CommonPipeline = []func(iface.IRequest, func(iface.IRequest) iface.IResponse) iface.IResponse{
-		TestPipeline,
+	CommonPipelines = []func(iface.IRequest, func(iface.IRequest) iface.IResponse) iface.IResponse{
+		CommonPipeline,
 	}
 
 	//分组管道，对应路由分组
-	GroupPipeline = map[string][]func(iface.IRequest, func(iface.IRequest) iface.IResponse) iface.IResponse{
+	GroupPipelines = map[string][]func(iface.IRequest, func(iface.IRequest) iface.IResponse) iface.IResponse{
 		"api": {
-			TestApi,
+			ApiPipeline,
 		},
-		"api.user": {
-			TestUser,
+		"api.auth": {
+			ApiAuthPipeline,
 		},
 	}
 )
 
-func TestPipeline(request iface.IRequest, next func(iface.IRequest) iface.IResponse) iface.IResponse {
-	fmt.Printf("--->客户端请求，客户端ID：%d，请求路由ID：%d，请求消息：%s\n", request.GetConnection().GetId(), request.GetMessageId(), string(request.GetData()))
+func CommonPipeline(request iface.IRequest, next func(iface.IRequest) iface.IResponse) iface.IResponse {
+	fmt.Println("--->CommonPipeline")
 
 	res := next(request)
 
-	fmt.Printf("<---服务端响应，客户端ID：%d，响应消息数量：%d\n", res.GetConnection().GetId(), res.GetMessageNumber())
+	fmt.Println("<---CommonPipeline")
 
 	return res
 }
 
-func TestApi(request iface.IRequest, next func(iface.IRequest) iface.IResponse) iface.IResponse {
-	fmt.Println("--->TestApi请求")
+func ApiPipeline(request iface.IRequest, next func(iface.IRequest) iface.IResponse) iface.IResponse {
+	fmt.Println("--->ApiPipeline")
+
 	res := next(request)
-	fmt.Println("--->TestApi响应")
+
+	fmt.Println("<---ApiPipeline")
 
 	return res
 }
 
-func TestUser(request iface.IRequest, next func(iface.IRequest) iface.IResponse) iface.IResponse {
-	fmt.Println("--->TestUser请求")
+func ApiAuthPipeline(request iface.IRequest, next func(iface.IRequest) iface.IResponse) iface.IResponse {
+	fmt.Println("--->ApiAuthPipeline")
+
 	res := next(request)
-	fmt.Println("--->TestUser响应")
+
+	fmt.Println("<---ApiAuthPipeline")
 
 	return res
 }

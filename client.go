@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"net"
 	"os"
@@ -21,15 +22,27 @@ func main() {
 	for {
 		reader := bufio.NewReader(os.Stdin)
 
-		fmt.Print("请输入文本: ")
+		fmt.Print("请选择操作：\n1、登录\n2、用户信息\n")
 		input, err := reader.ReadString('\n')
-		input = strings.Trim(input, "\n")
-		_, err = conn.Write(base.TestPack(0, []byte(input)))
+		input = strings.TrimSpace(input)
+		var data []byte
+		if input == "1" {
+			data = login()
+			fmt.Println("正在登录")
+		} else if input == "2" {
+			data = userInfo()
+			fmt.Println("正在获取用户信息")
+		} else {
+			fmt.Println("无效的选项！")
+			continue
+		}
+
+		_, err = conn.Write(data)
 		if err != nil {
 			fmt.Println(err)
 		}
 
-		data := make([]byte, conf.ServerConfig.DataSize)
+		data = make([]byte, conf.ServerConfig.DataSize)
 		_, err = conn.Read(data)
 		if err != nil {
 			fmt.Println(err)
@@ -38,4 +51,16 @@ func main() {
 
 		fmt.Printf("服务器响应，id:%d,msg:%s\n", id, string(buffer))
 	}
+}
+
+func login() []byte {
+	data, _ := json.Marshal(map[string]string{
+		"username": "admin",
+		"password": "123456",
+	})
+	return base.TestPack(1, data)
+}
+
+func userInfo() []byte {
+	return base.TestPack(2, []byte{})
 }

@@ -35,7 +35,7 @@ func (g *RouterGroup) Group(s string) iface.IRouterGroup {
 	name := fmt.Sprintf("%s.%s", g.name, s)
 	var pipes []func(iface.IRequest, func(iface.IRequest) iface.IResponse) iface.IResponse
 	pipes = append(pipes, g.pipelines...)
-	if v, ok := conf.GroupPipeline[name]; ok {
+	if v, ok := conf.GroupPipelines[name]; ok {
 		pipes = append(pipes, v...)
 	}
 
@@ -47,7 +47,7 @@ func (g *RouterGroup) GroupPl(s string, f func(iface.IRequest, func(iface.IReque
 	name := fmt.Sprintf("%s.%s", g.name, s)
 	var pipes []func(iface.IRequest, func(iface.IRequest) iface.IResponse) iface.IResponse
 	pipes = append(pipes, g.pipelines...)
-	if v, ok := conf.GroupPipeline[name]; ok {
+	if v, ok := conf.GroupPipelines[name]; ok {
 		pipes = append(pipes, v...)
 	}
 	pipes = append(pipes, f)
